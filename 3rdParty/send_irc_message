@@ -1,0 +1,115 @@
+#!/bin/bash
+# Notifications through IRC bot
+# Requires a somewhat recent bash
+#
+# Copied from https://notes.benv.junerules.com/check_mk-custom-notifications-irc/
+
+# Options:
+PIPE=/var/run/notifybot/notifybot.fifo
+COLORS=1 # Set to 0 to disable color output
+
+# Main program
+function loadColors()
+{
+	if [ $COLORS -ne 1 ]; then
+		return
+	fi
+	GREEN="\00033"
+	HIRED="\00034"
+	RED="\00035"
+	PURPLE="\00036"
+	YELLOW="\00037"
+	HIYELLOW="\00038"
+	HIGREEN="\00039"
+	CYAN="\000310"
+	HICYAN="\000311"
+	HIBLUE="\000312"
+	HIPURPLE="\000313"
+	GRAY="\000314" # Darker than 'normal'
+	WHITE="\000315"
+	NORMAL="\03"
+}
+
+loadColors
+HOSTCOLOR=$WHITE
+COMMENTCOLOR=$YELLOW
+
+MSG="[${HOSTCOLOR}${NOTIFY_HOSTNAME}${NORMAL}] "
+
+function getStateColor()
+{
+	if [ COLORS == 0 ]; then
+		return;
+	fi
+	case "$1" in
+		CRIT*)
+			echo $RED
+			;;
+		DOWN*)
+			echo $RED
+			;;
+		WARN*)
+			echo $YELLOW
+			;;
+		UNK*)
+			echo $YELLOW
+			;;
+		OK)
+			echo $GREEN
+			;;
+		UP)
+			echo $GREEN
+			;;
+		*)
+			echo "BUG, GOT '$1' instead of known state"
+	esac
+}
+if [ "$NOTIFY_WHAT" == "SERVICE" ];
+then
+	STATECOLOR=$(getStateColor $NOTIFY_SERVICESTATE )
+	PREVSTATECOLOR=$(getStateColor $NOTIFY_PREVIOUSSERVICEHARDSHORTSTATE )
+	case "${NOTIFY_NOTIFICATIONTYPE}" in
+		PROBLEM|RECOVERY)
+			MSG="$MSG $NOTIFY_SERVICEDESC ${PREVSTATECOLOR}${NOTIFY_PREVIOUSSERVICEHARDSHORTSTATE}${NORMAL} => ${STATECOLOR}${NOTIFY_SERVICESTATE}${NORMAL}" 
+			MSG="$MSG || ${YELLOW}${NOTIFY_SERVICEOUTPUT}${NORMAL}"
+			;;
+		*)
+			# could be CUSTOM notification
+			MSG="$MSG $NOTIFY_SERVICEDESC "
+			;;
+	esac
+else
+	STATECOLOR=$(getStateColor $NOTIFY_HOSTSTATE )
+	PREVSTATECOLOR=$(getStateColor $NOTIFY_PREVIOUSHOSTHARDSHORTSTATE )
+	case "${NOTIFY_NOTIFICATIONTYPE}" in
+		PROBLEM|RECOVERY)
+			MSG="$MSG ${PREVSTATECOLOR}${NOTIFY_PREVIOUSHOSTHARDSHORTSTATE}${NORMAL} => ${STATECOLOR}${NOTIFY_HOSTSTATE}${NORMAL} " 
+			;;
+	esac
+fi
+
+if [[ $NOTIFY_NOTIFICATIONTYPE =~ ^FLAP ]]
+then
+	if [[ $NOTIFY_NOTIFICATIONTYPE =~ START ]]
+	then
+		MSG="$MSG ${RED}Started Flapping${NORMAL}"
+	else
+		MSG="$MSG ${GREEN}Stopped Flapping${NORMAL}"
+	fi
+elif [[ $NOTIFY_NOTIFICATIONTYPE =~ ^DOWNTIME ]]
+then
+	# what = notification_type[8:].title()
+	MSG="$MSG Downtime $WHAT "
+	MSG="$MSG ${COMMENTCOLOR}${NOTIFY_NOTIFICATIONCOMMENT}${NORMAL}"
+elif [ "$NOTIFY_NOTIFICATIONTYPE" == "ACKNOWLEDGEMENT" ]; 
+then
+	MSG="$MSG ${HIGREEN}Acknowledged${NORMAL} by ${CYAN}${NOTIFY_NOTIFICATIONAUTHOR}${NORMAL}:"
+	MSG="$MSG ${COMMENTCOLOR}${NOTIFY_NOTIFICATIONCOMMENT}${NORMAL}"
+elif [ "$NOTIFY_NOTIFICATIONTYPE" == "CUSTOM" ]; 
+then
+	MSG="$MSG ${CYAN}Custom Notification:${NORMAL} "
+	MSG="$MSG ${COMMENTCOLOR}${NOTIFY_NOTIFICATIONCOMMENT}${NORMAL}"
+fi
+
+echo -e ' * Sending Notification to IRC: '$MSG
+echo -e $MSG > $PIPE
