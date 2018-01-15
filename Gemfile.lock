@@ -3,6 +3,7 @@ GEM
   specs:
     cinch (2.3.4)
     mkfifo (0.1.1)
+    rack (2.0.3)
 
 PLATFORMS
   ruby
@@ -10,6 +11,7 @@ PLATFORMS
 DEPENDENCIES
   cinch
   mkfifo
+  rack
 
 BUNDLED WITH
-   1.11.2
+   1.12.5
