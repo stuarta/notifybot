@@ -1,4 +1,4 @@
-== NotifyBot
+## NotifyBot
 
 Used to notify an IRC channel of outage messages
 
