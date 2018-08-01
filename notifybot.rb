@@ -60,14 +60,24 @@ class DispatchMessagePlugin
   end
 end
 
+class PrivMsgLogger
+  include Cinch::Plugin
+
+  listen_to :private, method: :on_privmsg
+  def on_privmsg(m)
+    info Cinch::Formatting.unformat(m.params[1])
+  end
+end
+
 bot = Cinch::Bot.new do
   configure do |c|
     c.nick            = "DevMythNotifyBot"
     c.realname        = "DevMythNotifyBot"
+    c.password        = ENV['IRC_PASSWORD']
     c.server          = "irc.freenode.org"
     c.channels        = ["#mythtv-dev"]
     c.verbose         = true
-    c.plugins.plugins = [DispatchMessagePlugin]
+    c.plugins.plugins = [PrivMsgLogger, DispatchMessagePlugin]
   end
 end
 
