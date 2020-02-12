@@ -2,16 +2,14 @@ GEM
   remote: https://rubygems.org/
   specs:
     cinch (2.3.4)
-    mkfifo (0.1.1)
-    rack (2.0.8)
+    rack (2.2.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   cinch
-  mkfifo
   rack (>= 2.0.8)
 
 BUNDLED WITH
-   1.16.1
+   1.17.2

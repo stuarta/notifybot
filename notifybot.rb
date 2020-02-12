@@ -3,27 +3,7 @@
 # License: GPL
 
 require 'cinch'
-require 'mkfifo'
 require 'rack'
-
-class IncomingMessageListener
-  def initialize(bot)
-    @bot = bot
-    if !File.exist?('/var/run/notifybot/notifybot.fifo')
-      File.mkfifo('/var/run/notifybot/notifybot.fifo')
-    end
-    @reader = open('/var/run/notifybot/notifybot.fifo', 'r+')
-  end
-
-  def start
-    while true
-      m_msg = @reader.gets
-      if !m_msg.empty?
-        @bot.handlers.dispatch(:dispatch_message, nil, m_msg)
-      end
-    end
-  end
-end
 
 class WebHandler
   def initialize(bot)
@@ -84,5 +64,4 @@ end
 bot.loggers.level   = :info
 wh = WebHandler.new(bot)
 Thread.new { Rack::Handler::default.run wh }
-Thread.new { IncomingMessageListener.new(bot).start }
 bot.start
