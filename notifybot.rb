@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-# Author: Stuart Auchterlonie 2017-2018
+# Author: Stuart Auchterlonie 2017-2020
 # License: GPL
 
 require 'cinch'
@@ -49,19 +49,26 @@ class PrivMsgLogger
   end
 end
 
-bot = Cinch::Bot.new do
-  configure do |c|
-    c.nick            = "DevMythNotifyBot"
-    c.realname        = "DevMythNotifyBot"
-    c.password        = ENV['IRC_PASSWORD']
-    c.server          = "irc.freenode.org"
-    c.channels        = ["#mythtv-dev"]
-    c.verbose         = true
-    c.plugins.plugins = [PrivMsgLogger, DispatchMessagePlugin]
+class NotifyBot
+  def initialize
+    @bot = Cinch::Bot.new do
+      configure do |c|
+        c.nick            = "DevMythNotifyBot"
+        c.realname        = "DevMythNotifyBot"
+        c.password        = ENV['IRC_PASSWORD']
+        c.server          = "irc.freenode.org"
+        c.channels        = ["#mythtv-dev"]
+        c.verbose         = true
+        c.plugins.plugins = [PrivMsgLogger, DispatchMessagePlugin]
+      end
+    end
+    @bot.loggers.level   = :info
+    @wh = WebHandler.new(@bot)
+    Thread.new { Rack::Handler::default.run(@wh, :Port => 9080) }
+    @bot.start
+  end
+
+  def call(env)
+    @wh.call(env)
   end
 end
-
-bot.loggers.level   = :info
-wh = WebHandler.new(bot)
-Thread.new { Rack::Handler::default.run wh }
-bot.start
