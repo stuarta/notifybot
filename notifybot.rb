@@ -53,11 +53,11 @@ class NotifyBot
   def initialize
     @bot = Cinch::Bot.new do
       configure do |c|
-        c.nick            = "DevMythNotifyBot"
-        c.realname        = "DevMythNotifyBot"
+        c.nick            = ENV['IRC_NICK'].nil? ? "DevMythLogBot" : ENV['IRC_NICK']
+        c.realname        = ENV['IRC_REALNAME'].nil? ? "DevMythLogBot" : ENV['IRC_REALNAME']
         c.password        = ENV['IRC_PASSWORD']
         c.server          = "irc.freenode.org"
-        c.channels        = ["#mythtv-dev"]
+        c.channels        = ENV['IRC_CHANNELS'].nil? ? ["#mythtv-dev"] : ENV['IRC_CHANNELS'].split(/[^#[:word:]-]+/)
         c.verbose         = true
         c.plugins.plugins = [PrivMsgLogger, DispatchMessagePlugin]
       end
