@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     cinch (2.3.4)
-    rack (2.2.8.1)
+    rack (2.2.11)
 
 PLATFORMS
   ruby
